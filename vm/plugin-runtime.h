@@ -1,6 +1,6 @@
 // vim: set sts=2 ts=8 sw=2 tw=99 et:
 //
-// Copyright (C) 2006-2015 AlliedModders LLC
+// Copyright (C) 2006-2026 AlliedModders LLC
 //
 // This file is part of SourcePawn. SourcePawn is free software: you can
 // redistribute it and/or modify it under the terms of the GNU General Public
@@ -100,6 +100,8 @@ class PluginRuntime : public BaseRuntime,
     int StringToLocal(cell_t local_addr, size_t chars, const char* source) override;
     int StringToLocalUTF8(cell_t local_addr, size_t maxbytes, const char* source,
                           size_t* wrtnbytes) override;
+    int LocalToInt64(cell_t local_addr, int64_t* value) override;
+    int Int64ToLocal(cell_t local_addr, int64_t value) override;
     cell_t* GetNullRef(SP_NULL_TYPE type) override;
     int LocalToStringNULL(cell_t local_addr, char** addr) override;
     IPluginRuntime* GetRuntime() override;

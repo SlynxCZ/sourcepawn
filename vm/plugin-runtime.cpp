@@ -1,6 +1,6 @@
 // vim: set sts=2 ts=8 sw=2 tw=99 et:
 //
-// Copyright (C) 2006-2015 AlliedModders LLC
+// Copyright (C) 2006-2026 AlliedModders LLC
 //
 // This file is part of SourcePawn. SourcePawn is free software: you can
 // redistribute it and/or modify it under the terms of the GNU General Public
@@ -603,6 +603,31 @@ PluginRuntime::LocalToString(cell_t local_addr, char** addr) {
     }
     *addr = (char*)(memory_ + local_addr);
 
+    return SP_ERROR_NONE;
+}
+
+int
+PluginRuntime::LocalToInt64(cell_t local_addr, int64_t* value) {
+    if (((local_addr >= hp_) && (local_addr < sp_)) ||
+        (local_addr < 0) ||
+        ((ucell_t)local_addr + sizeof(int64_t) > mem_size_))
+    {
+        return SP_ERROR_INVALID_ADDRESS;
+    }
+    if (value)
+        memcpy(value, memory_ + local_addr, sizeof(int64_t));
+    return SP_ERROR_NONE;
+}
+
+int
+PluginRuntime::Int64ToLocal(cell_t local_addr, int64_t value) {
+    if (((local_addr >= hp_) && (local_addr < sp_)) ||
+        (local_addr < 0) ||
+        ((ucell_t)local_addr + sizeof(int64_t) > mem_size_))
+    {
+        return SP_ERROR_INVALID_ADDRESS;
+    }
+    memcpy(memory_ + local_addr, &value, sizeof(int64_t));
     return SP_ERROR_NONE;
 }
 

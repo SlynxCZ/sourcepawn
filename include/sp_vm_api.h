@@ -1,6 +1,6 @@
 // vim: set ts=8 sts=4 sw=4 tw=99 et:
 //
-// Copyright (C) 2006-2015 AlliedModders LLC
+// Copyright (C) 2006-2026 AlliedModders LLC
 //
 // This file is part of SourcePawn. SourcePawn is free software: you can
 // redistribute it and/or modify it under the terms of the GNU General Public
@@ -653,6 +653,86 @@ class IPluginRuntime
      * Return the parent environment.
      */
     virtual ISourcePawnEnvironment* GetEnvironment() = 0;
+
+    /**
+     * @brief Read a 64-bit integer from two consecutive cells in script local
+     * memory.  This is required on x86_64 hosts (Source 2 / CS2) to read
+     * SourcePawn `int64` values or raw host addresses passed by reference.
+     *
+     * @param local_addr  Local address in plugin (must have ≥8 bytes available).
+     * @param value       Destination int64 output.
+     * @return            SP_ERROR_NONE on success, SP_ERROR_INVALID_ADDRESS if
+     *                    the region is out of bounds or in the heap–stack gap.
+     */
+    virtual int LocalToInt64(cell_t local_addr, int64_t* value) = 0;
+
+    /**
+     * @brief Write a 64-bit integer into two consecutive cells in script local
+     * memory.  Use this inside natives that need to return a host address or an
+     * int64 value via a by-reference SourcePawn parameter.
+     *
+     * @param local_addr  Local address in plugin (must have ≥8 bytes available).
+     * @param value       Value to write.
+     * @return            SP_ERROR_NONE on success, SP_ERROR_INVALID_ADDRESS on
+     *                    out-of-bounds access.
+     */
+    virtual int Int64ToLocal(cell_t local_addr, int64_t value) = 0;
+
+  public:
+    // ---- Inline helpers for native function authors ----
+
+    /**
+     * @brief Read an int64 parameter that was passed by reference from a
+     * SourcePawn script.  Equivalent to LocalToInt64(params[param_num], value).
+     *
+     * Typical native usage on CS2 / x64:
+     *   int64_t addr;
+     *   if (ctx->GetParamInt64(params, 1, &addr) != SP_ERROR_NONE) return 0;
+     *
+     * @param params      Native parameter array (params[0] = count).
+     * @param param_num   1-based parameter index.
+     * @param value       Destination int64 output.
+     */
+    inline int GetParamInt64(const cell_t* params, int param_num, int64_t* value) {
+        return LocalToInt64(params[param_num], value);
+    }
+
+    /**
+     * @brief Write an int64 value back through a by-reference script parameter.
+     *
+     * @param params      Native parameter array.
+     * @param param_num   1-based parameter index.
+     * @param value       Value to write.
+     */
+    inline int SetParamInt64(const cell_t* params, int param_num, int64_t value) {
+        return Int64ToLocal(params[param_num], value);
+    }
+
+    /**
+     * @brief Read a native host pointer stored as an int64 in script memory.
+     * On x64 this preserves all 64 bits; on x86 the upper 32 bits are zero.
+     *
+     * @param params      Native parameter array.
+     * @param param_num   1-based parameter index.
+     * @param ptr_out     Receives the decoded pointer.
+     */
+    inline int GetParamNativeAddr(const cell_t* params, int param_num, void** ptr_out) {
+        int64_t raw = 0;
+        int err = LocalToInt64(params[param_num], &raw);
+        if (err != SP_ERROR_NONE)
+            return err;
+        *ptr_out = SP_NativeAddrToPtr((sp_nativeaddr_t)raw);
+        return SP_ERROR_NONE;
+    }
+
+    /**
+     * @brief Write a native host pointer into a script int64 by-reference
+     * parameter.  Use this to hand a CS2 entity/object address back to a
+     * SourcePawn script.
+     */
+    inline int SetParamNativeAddr(const cell_t* params, int param_num, const void* ptr) {
+        return Int64ToLocal(params[param_num], (int64_t)SP_PtrToNativeAddr(ptr));
+    }
 
   public:
     // Source-level compatibility helper.

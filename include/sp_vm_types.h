@@ -2,7 +2,7 @@
  * vim: set ts=4 sw=4 tw=99 noet:
  * =============================================================================
  * SourcePawn
- * Copyright (C) 2004-2008 AlliedModders LLC.  All rights reserved.
+ * Copyright (C) 2004-2026 AlliedModders LLC.  All rights reserved.
  * =============================================================================
  *
  * This program is free software; you can redistribute it and/or modify it under
@@ -42,6 +42,29 @@
 typedef uint32_t ucell_t;  /**< Unsigned 32bit integer */
 typedef int32_t cell_t;    /**< Basic 32bit signed integer type for plugins */
 typedef uint32_t funcid_t; /**< Function index code */
+
+/**
+ * Host-pointer-sized integer for passing native memory addresses through the
+ * SourcePawn native API.  On x86_64 (Source 2 / CS2) this is 64 bits; on
+ * x86 it is 32 bits.  Scripts that need to hold a raw host address should
+ * use the SourcePawn `int64` type, which maps to two consecutive cells.
+ */
+#if defined(__x86_64__) || defined(_M_X64) || defined(__aarch64__) || defined(_M_ARM64)
+typedef int64_t  sp_nativeaddr_t;
+typedef uint64_t sp_unativeaddr_t;
+#else
+typedef int32_t  sp_nativeaddr_t;
+typedef uint32_t sp_unativeaddr_t;
+#endif
+
+/** Convert a native pointer to the scripting address integer type. */
+static inline sp_nativeaddr_t SP_PtrToNativeAddr(const void* ptr) {
+    return (sp_nativeaddr_t)(uintptr_t)ptr;
+}
+/** Convert a scripting address integer back to a native pointer. */
+static inline void* SP_NativeAddrToPtr(sp_nativeaddr_t addr) {
+    return (void*)(uintptr_t)(sp_unativeaddr_t)addr;
+}
 
 #include "sp_typeutil.h"
 
